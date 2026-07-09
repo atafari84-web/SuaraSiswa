@@ -10,8 +10,8 @@ const categories = [
   "Kesehatan",
 ];
 
-const ADMIN_EMAIL = "admin@suarasiswa.local";
-const ADMIN_PASSWORD = "admin123";
+const ADMIN_EMAIL = "atafari84@gmail.com";
+const ADMIN_PASSWORD = "Viano134";
 
 const nameIdeas = [
   ["SuaraSiswa", "Suara Siswa untuk Sekolah yang Lebih Baik"],
