@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SuaraSiswa - Evaluasi Proker OSIS</title>
+    <meta
+      name="description"
+      content="Platform evaluasi Program Kerja OSIS dan aspirasi siswa untuk sekolah yang lebih baik."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#home" aria-label="SuaraSiswa">
+          <span class="brand-mark">SS</span>
+          <span>
+            <strong>SuaraSiswa</strong>
+            <small>Evaluasi Proker OSIS</small>
+          </span>
+        </a>
+
+        <button class="icon-button nav-toggle" id="navToggle" aria-label="Buka menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <nav class="nav" id="mainNav" aria-label="Navigasi utama">
+          <a href="#home" data-route="home">Home</a>
+          <a href="#program" data-route="program">Program Kerja</a>
+          <a href="#aspirasi" data-route="aspirasi">Aspirasi</a>
+          <a href="#tentang" data-route="tentang">Tentang</a>
+          <a href="#admin" data-route="admin">Admin</a>
+        </nav>
+
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Ubah tema">
+          <span class="sun">☀</span>
+          <span class="moon">●</span>
+        </button>
+      </header>
+
+      <main>
+        <section class="page active" id="homePage">
+          <div class="hero">
+            <div class="hero-copy">
+              <p class="eyebrow">Suara Siswa untuk Sekolah yang Lebih Baik</p>
+              <h1>Berikan Penilaian dan Aspirasi Terbaikmu untuk Program Kerja OSIS</h1>
+              <p>
+                Lihat kegiatan OSIS, beri rating dengan alasan yang jelas, dan sampaikan ide
+                untuk OSIS, MPK, maupun sekolah.
+              </p>
+              <div class="hero-actions">
+                <a class="primary-button" href="#program">Lihat Program Kerja</a>
+                <a class="secondary-button" href="#aspirasi">Kirim Aspirasi</a>
+              </div>
+            </div>
+            <div class="hero-panel" aria-label="Ringkasan platform">
+              <div class="metric-card accent-teal">
+                <span>Total Proker</span>
+                <strong data-stat="programs">0</strong>
+              </div>
+              <div class="metric-card accent-maroon">
+                <span>Total Penilaian</span>
+                <strong data-stat="reviews">0</strong>
+              </div>
+              <div class="metric-card accent-ink">
+                <span>Total Aspirasi</span>
+                <strong data-stat="aspirations">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <section class="section">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Rekomendasi Nama</p>
+                <h2>Nama Website yang Mudah Diingat</h2>
+              </div>
+            </div>
+            <div class="name-grid" id="nameGrid"></div>
+          </section>
+
+          <section class="section">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Program Populer</p>
+                <h2>Rating Tertinggi Saat Ini</h2>
+              </div>
+              <a href="#program" class="text-link">Lihat semua</a>
+            </div>
+            <div class="horizontal-list" id="featuredPrograms"></div>
+          </section>
+        </section>
+
+        <section class="page" id="programPage">
+          <div class="page-header compact">
+            <div>
+              <p class="eyebrow">Program Kerja OSIS</p>
+              <h1>Jelajahi Program Kerja</h1>
+            </div>
+            <button class="primary-button small" id="openAddProgram">Tambah Proker</button>
+          </div>
+
+          <div class="toolbar">
+            <label class="search-box">
+              <span>Cari</span>
+              <input id="searchInput" type="search" placeholder="Nama program atau kategori" />
+            </label>
+            <label class="select-box">
+              <span>Kategori</span>
+              <select id="categoryFilter">
+                <option value="Semua">Semua kategori</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="skeleton-grid" id="programSkeleton" aria-hidden="true">
+            <div></div><div></div><div></div><div></div>
+          </div>
+          <div class="program-grid" id="programGrid"></div>
+        </section>
+
+        <section class="page" id="detailPage">
+          <button class="back-button" id="backToPrograms" type="button">← Kembali</button>
+          <div id="programDetail"></div>
+        </section>
+
+        <section class="page" id="aspirasiPage">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">Ruang Aspirasi</p>
+              <h1>Sampaikan Kritik, Saran, dan Ide Terbaikmu</h1>
+            </div>
+          </div>
+
+          <div class="form-layout">
+            <form class="panel-form" id="aspirationForm">
+              <div class="two-col">
+                <label>Nama <span>Opsional</span><input name="name" type="text" /></label>
+                <label>Kelas<input name="className" type="text" required placeholder="Contoh: XI-3" /></label>
+              </div>
+              <label>
+                Kategori Aspirasi
+                <select name="category" required>
+                  <option value="">Pilih kategori</option>
+                  <option>OSIS</option>
+                  <option>MPK</option>
+                  <option>Sekolah</option>
+                  <option>Fasilitas</option>
+                  <option>Pembelajaran</option>
+                  <option>Lainnya</option>
+                </select>
+              </label>
+              <label>Judul Aspirasi<input name="title" type="text" required /></label>
+              <label>
+                Isi Aspirasi
+                <textarea
+                  name="body"
+                  required
+                  minlength="30"
+                  placeholder="Tuliskan kritik, saran, maupun ide yang dapat membantu sekolah menjadi lebih baik."
+                ></textarea>
+              </label>
+              <button class="primary-button" type="submit">Kirim Aspirasi</button>
+            </form>
+            <aside class="insight-panel">
+              <h2>Aspirasi Terbaru</h2>
+              <div id="aspirationList"></div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="page" id="tentangPage">
+          <div class="about-grid">
+            <div>
+              <p class="eyebrow">Tentang Platform</p>
+              <h1>Evaluasi Proker yang Terbuka, Rapi, dan Mudah Dipahami</h1>
+              <p>
+                SuaraSiswa membantu OSIS dan MPK membaca kebutuhan siswa melalui rating,
+                ulasan, dan aspirasi yang terkumpul dalam satu tempat. Data dapat dipakai
+                sebagai bahan evaluasi program, rapat kerja, dan perbaikan kegiatan sekolah.
+              </p>
+            </div>
+            <div class="about-card">
+              <h2>Tujuan Utama</h2>
+              <ul>
+                <li>Melihat seluruh Program Kerja OSIS.</li>
+                <li>Memberikan penilaian disertai alasan.</li>
+                <li>Menyampaikan kritik, saran, dan aspirasi.</li>
+                <li>Membantu OSIS dan MPK menentukan prioritas perbaikan.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="page" id="adminPage">
+          <div class="page-header compact">
+            <div>
+              <p class="eyebrow">Dashboard Admin</p>
+              <h1>Kelola Program, Ulasan, Aspirasi, dan Statistik</h1>
+            </div>
+          </div>
+
+          <div class="admin-tabs" role="tablist">
+            <button class="active" data-admin-tab="stats">Statistik</button>
+            <button data-admin-tab="programs">Program</button>
+            <button data-admin-tab="reviews">Ulasan</button>
+            <button data-admin-tab="aspirations">Aspirasi</button>
+          </div>
+
+          <div class="admin-panel active" id="statsPanel">
+            <div class="stats-grid">
+              <div class="metric-card"><span>Total Program Kerja</span><strong data-stat="programs">0</strong></div>
+              <div class="metric-card"><span>Total Penilaian</span><strong data-stat="reviews">0</strong></div>
+              <div class="metric-card"><span>Total Aspirasi</span><strong data-stat="aspirations">0</strong></div>
+              <div class="metric-card"><span>Kepuasan Siswa</span><strong data-stat="satisfaction">0%</strong></div>
+            </div>
+            <div class="chart-grid">
+              <div class="chart-card">
+                <h2>Grafik Jumlah Rating</h2>
+                <div id="ratingChart" class="bar-chart"></div>
+              </div>
+              <div class="chart-card">
+                <h2>Grafik Aspirasi</h2>
+                <div id="aspirationChart" class="bar-chart"></div>
+              </div>
+              <div class="chart-card wide">
+                <h2>Program Tertinggi dan Terendah</h2>
+                <div id="rankSummary"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-panel" id="programsPanel">
+            <form class="panel-form admin-form" id="programForm">
+              <input type="hidden" name="id" />
+              <div class="two-col">
+                <label>Nama Program<input name="name" type="text" required /></label>
+                <label>Kategori<select name="category" required id="adminCategory"></select></label>
+              </div>
+              <div class="two-col">
+                <label>Penanggung Jawab<input name="owner" type="text" required /></label>
+                <label>Status<select name="status" required><option>Sedang Berjalan</option><option>Selesai</option><option>Akan Datang</option></select></label>
+              </div>
+              <label>Deskripsi Singkat<input name="shortDescription" type="text" required /></label>
+              <label>Deskripsi Lengkap<textarea name="description" required></textarea></label>
+              <div class="two-col">
+                <label>Tujuan Program<input name="goal" type="text" required /></label>
+                <label>Target Peserta<input name="target" type="text" required /></label>
+              </div>
+              <button class="primary-button" type="submit">Simpan Program</button>
+            </form>
+            <div class="admin-list" id="adminProgramList"></div>
+          </div>
+
+          <div class="admin-panel" id="reviewsPanel">
+            <div class="admin-list" id="adminReviewList"></div>
+          </div>
+
+          <div class="admin-panel" id="aspirationsPanel">
+            <div class="admin-list" id="adminAspirationList"></div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div class="footer-logos">
+          <span>Logo Sekolah</span>
+          <span>Logo OSIS</span>
+          <span>Logo MPK</span>
+        </div>
+        <div>
+          <strong>SuaraSiswa</strong>
+          <p>Hak Cipta © 2026. Kontak: osis@sekolah.sch.id · Instagram @osis_sekolah</p>
+        </div>
+      </footer>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <template id="reviewTemplate">
+      <article class="review-item">
+        <div class="review-stars"></div>
+        <p></p>
+        <small></small>
+      </article>
+    </template>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
