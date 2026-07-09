@@ -10,6 +10,9 @@ const categories = [
   "Kesehatan",
 ];
 
+const ADMIN_EMAIL = "admin@suarasiswa.local";
+const ADMIN_PASSWORD = "admin123";
+
 const nameIdeas = [
   ["SuaraSiswa", "Suara Siswa untuk Sekolah yang Lebih Baik"],
   ["RuangKita", "Aspirasi Bersama, Sekolah Makin Bermakna"],
@@ -101,7 +104,7 @@ const defaultReviews = [
     id: createId(),
     programId: "green-school",
     name: "Anonim",
-    className: "XI-3",
+    className: "XI-C",
     rating: 5,
     reason: "Programnya sangat bermanfaat dan membuat lingkungan sekolah terasa lebih bersih.",
     createdAt: Date.now() - 2 * 86400000,
@@ -119,7 +122,7 @@ const defaultReviews = [
     id: createId(),
     programId: "pentas-seni",
     name: "Anonim",
-    className: "XI-5",
+    className: "XI-D",
     rating: 5,
     reason: "Kegiatannya seru dan memberi kesempatan siswa tampil di depan banyak orang.",
     createdAt: Date.now() - 1 * 86400000,
@@ -130,7 +133,7 @@ const defaultAspirations = [
   {
     id: createId(),
     name: "Anonim",
-    className: "XI-1",
+    className: "XI-A",
     category: "Fasilitas",
     title: "Perbaikan area kantin",
     body: "Area kantin perlu tempat duduk tambahan dan jalur antrean yang lebih rapi agar jam istirahat tidak terlalu padat.",
@@ -219,6 +222,8 @@ function setupFilters() {
 function setupForms() {
   $("#aspirationForm").addEventListener("submit", handleAspirationSubmit);
   $("#programForm").addEventListener("submit", handleProgramSubmit);
+  $("#adminLoginForm").addEventListener("submit", handleAdminLogin);
+  $("#adminLogout").addEventListener("click", handleAdminLogout);
 }
 
 function route() {
@@ -242,6 +247,10 @@ function route() {
   if (routeName === "detail" && id) {
     activeProgramId = id;
     renderProgramDetail();
+  }
+
+  if (routeName === "admin") {
+    renderAdminGate();
   }
 }
 
@@ -338,7 +347,7 @@ function renderProgramDetail() {
         <h2>Beri Ulasan</h2>
         <form class="panel-form" id="reviewForm">
           <label>Nama <span>Opsional</span><input name="name" type="text" /></label>
-          <label>Kelas<input name="className" type="text" required placeholder="Contoh: XI-3" /></label>
+          <label>Kelas<input name="className" type="text" required placeholder="Contoh: XI-A" /></label>
           <div>
             <strong>Rating</strong>
             <div class="rating-input" aria-label="Rating 1 sampai 5">
@@ -464,6 +473,11 @@ function renderAspirations() {
 
 function handleProgramSubmit(event) {
   event.preventDefault();
+  if (!isAdminLoggedIn()) {
+    showToast("Silakan login sebagai admin terlebih dahulu.");
+    renderAdminGate();
+    return;
+  }
   const data = Object.fromEntries(new FormData(event.currentTarget));
   const payload = {
     id: data.id || slugify(data.name),
@@ -567,12 +581,73 @@ function renderBarChart(selector, rows) {
 }
 
 function setAdminTab(tab) {
+  if (!isAdminLoggedIn()) {
+    renderAdminGate();
+    showToast("Silakan login sebagai admin terlebih dahulu.");
+    return;
+  }
   $$(".admin-tabs button").forEach((button) => button.classList.toggle("active", button.dataset.adminTab === tab));
   $$(".admin-panel").forEach((panel) => panel.classList.remove("active"));
   $(`#${tab}Panel`).classList.add("active");
 }
 
+function handleAdminLogin(event) {
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(event.currentTarget));
+  const email = data.email.trim().toLowerCase();
+  const password = data.password.trim();
+
+  if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+    showToast("Email atau password admin tidak sesuai.");
+    return;
+  }
+
+  localStorage.setItem(
+    "suarasiswa:adminSession",
+    JSON.stringify({ email, loginAt: Date.now() })
+  );
+  event.currentTarget.reset();
+  renderAdminGate();
+  setAdminTab("stats");
+  showToast("Login admin berhasil.");
+}
+
+function handleAdminLogout() {
+  localStorage.removeItem("suarasiswa:adminSession");
+  renderAdminGate();
+  showToast("Admin berhasil keluar.");
+}
+
+function renderAdminGate() {
+  const loggedIn = isAdminLoggedIn();
+  $("#adminLoginPanel").classList.toggle("hidden", loggedIn);
+  $("#adminContent").classList.toggle("locked", !loggedIn);
+
+  if (loggedIn) {
+    const session = getAdminSession();
+    $("#adminEmailLabel").textContent = session.email;
+  }
+}
+
+function isAdminLoggedIn() {
+  const session = getAdminSession();
+  return session?.email === ADMIN_EMAIL;
+}
+
+function getAdminSession() {
+  try {
+    return JSON.parse(localStorage.getItem("suarasiswa:adminSession"));
+  } catch {
+    return null;
+  }
+}
+
 window.editProgram = function editProgram(id) {
+  if (!isAdminLoggedIn()) {
+    showToast("Silakan login sebagai admin terlebih dahulu.");
+    renderAdminGate();
+    return;
+  }
   const program = store.programs.find((item) => item.id === id);
   if (!program) return;
   const form = $("#programForm");
@@ -583,6 +658,11 @@ window.editProgram = function editProgram(id) {
 };
 
 window.deleteProgram = function deleteProgram(id) {
+  if (!isAdminLoggedIn()) {
+    showToast("Silakan login sebagai admin terlebih dahulu.");
+    renderAdminGate();
+    return;
+  }
   if (!confirm("Hapus program kerja ini?")) return;
   store.programs = store.programs.filter((program) => program.id !== id);
   store.reviews = store.reviews.filter((review) => review.programId !== id);
@@ -591,6 +671,11 @@ window.deleteProgram = function deleteProgram(id) {
 };
 
 window.deleteReview = function deleteReview(id) {
+  if (!isAdminLoggedIn()) {
+    showToast("Silakan login sebagai admin terlebih dahulu.");
+    renderAdminGate();
+    return;
+  }
   store.reviews = store.reviews.filter((review) => review.id !== id);
   save();
   renderAll();

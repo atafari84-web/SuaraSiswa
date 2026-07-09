@@ -16,3 +16,10 @@ Buka file `index.html` langsung di browser.
 ## Catatan Publikasi
 
 Versi ini sudah bisa dipakai sebagai prototipe publik berbasis browser dengan penyimpanan sementara `localStorage`. Untuk produksi sekolah, hubungkan form dan dashboard ke Supabase sesuai panduan di `supabase-guide.md`, lalu batasi akses admin memakai Supabase Auth.
+
+## Login Admin Demo
+
+- Email: `admin@suarasiswa.local`
+- Password: `admin123`
+
+Login ini hanya untuk prototipe lokal. Untuk website yang dipublikasikan, gunakan Supabase Auth agar akun admin benar-benar aman.
