@@ -13,13 +13,6 @@ const categories = [
 const ADMIN_EMAIL = "atafari84@gmail.com";
 const ADMIN_PASSWORD = "Viano134";
 
-const nameIdeas = [
-  ["SuaraSiswa", "Suara Siswa untuk Sekolah yang Lebih Baik"],
-  ["RuangKita", "Aspirasi Bersama, Sekolah Makin Bermakna"],
-  ["ProkerPulse", "Dengar Siswa, Evaluasi Program, Tingkatkan Dampak"],
-  ["SiswaBersuara", "Tempat Ide dan Evaluasi Bertemu"],
-];
-
 const SUPABASE_URL = "https://ixfkflsplqvvilcvlhrx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4ZmtmbHNwbHF2dmlsY3ZsaHJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MDI2MDksImV4cCI6MjA5OTE3ODYwOX0.PQuFzHb7-NPzTYtuYGE3KyFsQwgTJFHdn0QnUR3zOxw";
 const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -264,9 +257,7 @@ function renderAll() {
 }
 
 function renderNameIdeas() {
-  $("#nameGrid").innerHTML = nameIdeas
-    .map(([name, slogan]) => `<article class="name-card"><strong>${name}</strong><span>${slogan}</span></article>`)
-    .join("");
+  return;
 }
 
 function renderFeatured() {
