@@ -1,4 +1,4 @@
-# SuaraSiswa
+# Suara Kita
 
 Website evaluasi Program Kerja OSIS dan ruang aspirasi siswa dengan tampilan modern terinspirasi Google Play Store dan Material Design.
 
@@ -19,7 +19,7 @@ Versi ini sudah bisa dipakai sebagai prototipe publik berbasis browser dengan pe
 
 ## Login Admin Demo
 
-- Email: `admin@suarasiswa.local`
-- Password: `admin123`
+- Email: `atafari84@gmail.com`
+- Password: `Viano134`
 
 Login ini hanya untuk prototipe lokal. Untuk website yang dipublikasikan, gunakan Supabase Auth agar akun admin benar-benar aman.

@@ -127,8 +127,8 @@ const defaultAspirations = [
     id: createId(),
     name: "Anonim",
     className: "XI-A",
-    category: "Fasilitas",
-    title: "Perbaikan area kantin",
+    role: "Siswa",
+    category: "Siswa",
     body: "Area kantin perlu tempat duduk tambahan dan jalur antrean yang lebih rapi agar jam istirahat tidak terlalu padat.",
     createdAt: Date.now() - 3 * 86400000,
   },
@@ -139,6 +139,12 @@ const store = {
   reviews: load("reviews", defaultReviews),
   aspirations: load("aspirations", defaultAspirations),
 };
+
+store.aspirations = store.aspirations.map((item) => ({
+  ...item,
+  role: item.role || "Siswa",
+  category: item.role || "Siswa",
+}));
 
 let activeProgramId = store.programs[0]?.id;
 let activeReviewFilter = "Semua";
@@ -436,8 +442,8 @@ function handleAspirationSubmit(event) {
     id: createId(),
     name: cleanText(data.name) || "Anonim",
     className: cleanText(data.className),
-    category: data.category,
-    title: cleanText(data.title),
+    role: data.role,
+    category: data.role,
     body: cleanText(data.body),
     createdAt: Date.now(),
   });
@@ -453,8 +459,8 @@ function renderAspirations() {
     .map(
       (item) => `
       <article class="aspiration-item">
-        <span class="category-pill">${item.category}</span>
-        <h3>${item.title}</h3>
+        <span class="category-pill">${item.role || item.category || "Siswa"}</span>
+        <h3>Aspirasi dari ${item.role || item.category || "Siswa"}</h3>
         <p>${item.body}</p>
         <small>${item.name} · Kelas ${item.className} · ${relativeTime(item.createdAt)}</small>
       </article>`
@@ -520,7 +526,7 @@ function renderAdmin() {
     .map(
       (item) => `
       <article class="admin-item">
-        <strong>${item.title}</strong>
+        <strong>Aspirasi dari ${item.role || item.category || "Siswa"}</strong>
         <p>${item.body}</p>
         <small>${item.category} · ${item.name} · Kelas ${item.className}</small>
       </article>`
@@ -544,9 +550,9 @@ function renderStats() {
   }));
   renderBarChart("#ratingChart", ratingCounts);
 
-  const aspirationCounts = ["OSIS", "MPK", "Sekolah", "Fasilitas", "Pembelajaran", "Lainnya"].map((category) => ({
-    label: category,
-    value: store.aspirations.filter((item) => item.category === category).length,
+  const aspirationCounts = ["Siswa", "Guru", "Karyawan", "Orang Tua"].map((role) => ({
+    label: role,
+    value: store.aspirations.filter((item) => (item.role || item.category) === role).length,
   }));
   renderBarChart("#aspirationChart", aspirationCounts);
 
@@ -759,8 +765,7 @@ async function submitAspirationToSupabase(aspiration) {
   const { error } = await supabaseClient.from("aspirasi").insert({
     nama: aspiration.name,
     kelas: aspiration.className,
-    kategori: aspiration.category,
-    judul: aspiration.title,
+    peran: aspiration.role,
     isi: aspiration.body,
   });
 
