@@ -16,6 +16,7 @@ const ADMIN_PASSWORD = "Viano134";
 const SUPABASE_URL = "https://ixfkflsplqvvilcvlhrx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4ZmtmbHNwbHF2dmlsY3ZsaHJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MDI2MDksImV4cCI6MjA5OTE3ODYwOX0.PQuFzHb7-NPzTYtuYGE3KyFsQwgTJFHdn0QnUR3zOxw";
 const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const USE_SUPABASE = Boolean(supabaseClient);
 
 const defaultPrograms = [
   {
@@ -152,13 +153,14 @@ let activeReviewFilter = "Semua";
 const $ = (selector, scope = document) => scope.querySelector(selector);
 const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   setupNavigation();
   setupTheme();
   setupFilters();
   setupForms();
   renderAll();
   route();
+  await syncFromSupabase();
 });
 
 window.addEventListener("hashchange", route);
@@ -175,6 +177,28 @@ function save() {
   localStorage.setItem("suarasiswa:programs", JSON.stringify(store.programs));
   localStorage.setItem("suarasiswa:reviews", JSON.stringify(store.reviews));
   localStorage.setItem("suarasiswa:aspirations", JSON.stringify(store.aspirations));
+}
+
+async function syncFromSupabase() {
+  if (!USE_SUPABASE) return;
+
+  try {
+    const [programs, reviews, aspirations] = await Promise.all([
+      fetchProgramsFromSupabase(),
+      fetchReviewsFromSupabase(),
+      fetchAspirationsFromSupabase(),
+    ]);
+
+    if (programs.length) store.programs = programs;
+    store.reviews = reviews;
+    store.aspirations = aspirations;
+    save();
+    renderAll();
+
+    if (location.hash.startsWith("#detail/")) renderProgramDetail();
+  } catch (error) {
+    showToast("Data Supabase belum bisa dimuat. Periksa tabel dan policy database.");
+  }
 }
 
 function setupNavigation() {
@@ -746,28 +770,102 @@ async function fetchProgramsFromSupabase() {
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return data;
+  return (data || []).map(mapProgramFromSupabase);
+}
+
+async function fetchReviewsFromSupabase() {
+  const { data, error } = await supabaseClient
+    .from("reviews")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data || []).map(mapReviewFromSupabase);
+}
+
+async function fetchAspirationsFromSupabase() {
+  const { data, error } = await supabaseClient
+    .from("aspirasi")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data || []).map(mapAspirationFromSupabase);
 }
 
 async function submitReviewToSupabase(review) {
-  const { error } = await supabaseClient.from("reviews").insert({
-    program_id: review.programId,
-    nama: review.name,
-    kelas: review.className,
-    rating: review.rating,
-    alasan: review.reason,
-  });
+  const { data, error } = await supabaseClient
+    .from("reviews")
+    .insert({
+      program_id: review.programId,
+      nama: review.name,
+      kelas: review.className,
+      rating: review.rating,
+      alasan: review.reason,
+    })
+    .select("*")
+    .single();
 
   if (error) throw error;
+  return mapReviewFromSupabase(data);
 }
 
 async function submitAspirationToSupabase(aspiration) {
-  const { error } = await supabaseClient.from("aspirasi").insert({
-    nama: aspiration.name,
-    kelas: aspiration.className,
-    peran: aspiration.role,
-    isi: aspiration.body,
-  });
+  const { data, error } = await supabaseClient
+    .from("aspirasi")
+    .insert({
+      nama: aspiration.name,
+      kelas: aspiration.className,
+      peran: aspiration.role,
+      isi: aspiration.body,
+    })
+    .select("*")
+    .single();
 
   if (error) throw error;
+  return mapAspirationFromSupabase(data);
+}
+
+function mapProgramFromSupabase(row) {
+  return {
+    id: row.id,
+    name: row.nama,
+    category: row.kategori?.nama || row.kategori || "Lainnya",
+    owner: row.penanggung_jawab || "OSIS",
+    status: row.status || "Akan Datang",
+    shortDescription: row.deskripsi_singkat || row.deskripsi_lengkap || "Belum ada deskripsi singkat.",
+    description: row.deskripsi_lengkap || row.deskripsi_singkat || "Belum ada deskripsi lengkap.",
+    goal: row.tujuan || "Belum ada tujuan program.",
+    target: row.target_peserta || "Seluruh warga sekolah",
+  };
+}
+
+function mapReviewFromSupabase(row) {
+  return {
+    id: row.id,
+    programId: row.program_id,
+    name: row.nama || "Anonim",
+    className: row.kelas,
+    rating: Number(row.rating),
+    reason: row.alasan,
+    createdAt: parseSupabaseDate(row.created_at),
+  };
+}
+
+function mapAspirationFromSupabase(row) {
+  const role = row.peran || row.kategori || "Siswa";
+  return {
+    id: row.id,
+    name: row.nama || "Anonim",
+    className: row.kelas,
+    role,
+    category: role,
+    body: row.isi,
+    createdAt: parseSupabaseDate(row.created_at),
+  };
+}
+
+function parseSupabaseDate(value) {
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? Date.now() : time;
 }
