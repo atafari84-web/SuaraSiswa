@@ -130,6 +130,7 @@ const defaultAspirations = [
     className: "XI-A",
     role: "Siswa",
     category: "Siswa",
+    target: "OSIS",
     body: "Area kantin perlu tempat duduk tambahan dan jalur antrean yang lebih rapi agar jam istirahat tidak terlalu padat.",
     createdAt: Date.now() - 3 * 86400000,
   },
@@ -145,6 +146,7 @@ store.aspirations = store.aspirations.map((item) => ({
   ...item,
   role: item.role || "Siswa",
   category: item.role || "Siswa",
+  target: item.target || "OSIS",
 }));
 
 let activeProgramId = store.programs[0]?.id;
@@ -468,6 +470,7 @@ function handleAspirationSubmit(event) {
     className: cleanText(data.className),
     role: data.role,
     category: data.role,
+    target: data.target,
     body: cleanText(data.body),
     createdAt: Date.now(),
   });
@@ -483,7 +486,7 @@ function renderAspirations() {
     .map(
       (item) => `
       <article class="aspiration-item">
-        <span class="category-pill">${item.role || item.category || "Siswa"}</span>
+        <span class="category-pill">Untuk ${item.target || "OSIS"}</span>
         <h3>Aspirasi dari ${item.role || item.category || "Siswa"}</h3>
         <p>${item.body}</p>
         <small>${item.name} · Kelas ${item.className} · ${relativeTime(item.createdAt)}</small>
@@ -550,7 +553,7 @@ function renderAdmin() {
     .map(
       (item) => `
       <article class="admin-item">
-        <strong>Aspirasi dari ${item.role || item.category || "Siswa"}</strong>
+        <strong>Aspirasi dari ${item.role || item.category || "Siswa"} untuk ${item.target || "OSIS"}</strong>
         <p>${item.body}</p>
         <small>${item.category} · ${item.name} · Kelas ${item.className}</small>
       </article>`
@@ -817,6 +820,7 @@ async function submitAspirationToSupabase(aspiration) {
       nama: aspiration.name,
       kelas: aspiration.className,
       peran: aspiration.role,
+      tujuan: aspiration.target,
       isi: aspiration.body,
     })
     .select("*")
@@ -860,6 +864,7 @@ function mapAspirationFromSupabase(row) {
     className: row.kelas,
     role,
     category: role,
+    target: row.tujuan || "OSIS",
     body: row.isi,
     createdAt: parseSupabaseDate(row.created_at),
   };
