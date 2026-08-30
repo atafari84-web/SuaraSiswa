@@ -13,16 +13,10 @@ const categories = [
 const ADMIN_EMAIL = "atafari84@gmail.com";
 const ADMIN_PASSWORD = "Viano134";
 
-const nameIdeas = [
-  ["SuaraSiswa", "Suara Siswa untuk Sekolah yang Lebih Baik"],
-  ["RuangKita", "Aspirasi Bersama, Sekolah Makin Bermakna"],
-  ["ProkerPulse", "Dengar Siswa, Evaluasi Program, Tingkatkan Dampak"],
-  ["SiswaBersuara", "Tempat Ide dan Evaluasi Bertemu"],
-];
-
 const SUPABASE_URL = "https://ixfkflsplqvvilcvlhrx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4ZmtmbHNwbHF2dmlsY3ZsaHJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MDI2MDksImV4cCI6MjA5OTE3ODYwOX0.PQuFzHb7-NPzTYtuYGE3KyFsQwgTJFHdn0QnUR3zOxw";
 const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const USE_SUPABASE = Boolean(supabaseClient);
 
 const defaultPrograms = [
   {
@@ -134,8 +128,8 @@ const defaultAspirations = [
     id: createId(),
     name: "Anonim",
     className: "XI-A",
-    category: "Fasilitas",
-    title: "Perbaikan area kantin",
+    role: "Siswa",
+    category: "Siswa",
     body: "Area kantin perlu tempat duduk tambahan dan jalur antrean yang lebih rapi agar jam istirahat tidak terlalu padat.",
     createdAt: Date.now() - 3 * 86400000,
   },
@@ -147,19 +141,26 @@ const store = {
   aspirations: load("aspirations", defaultAspirations),
 };
 
+store.aspirations = store.aspirations.map((item) => ({
+  ...item,
+  role: item.role || "Siswa",
+  category: item.role || "Siswa",
+}));
+
 let activeProgramId = store.programs[0]?.id;
 let activeReviewFilter = "Semua";
 
 const $ = (selector, scope = document) => scope.querySelector(selector);
 const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   setupNavigation();
   setupTheme();
   setupFilters();
   setupForms();
   renderAll();
   route();
+  await syncFromSupabase();
 });
 
 window.addEventListener("hashchange", route);
@@ -176,6 +177,28 @@ function save() {
   localStorage.setItem("suarasiswa:programs", JSON.stringify(store.programs));
   localStorage.setItem("suarasiswa:reviews", JSON.stringify(store.reviews));
   localStorage.setItem("suarasiswa:aspirations", JSON.stringify(store.aspirations));
+}
+
+async function syncFromSupabase() {
+  if (!USE_SUPABASE) return;
+
+  try {
+    const [programs, reviews, aspirations] = await Promise.all([
+      fetchProgramsFromSupabase(),
+      fetchReviewsFromSupabase(),
+      fetchAspirationsFromSupabase(),
+    ]);
+
+    if (programs.length) store.programs = programs;
+    store.reviews = reviews;
+    store.aspirations = aspirations;
+    save();
+    renderAll();
+
+    if (location.hash.startsWith("#detail/")) renderProgramDetail();
+  } catch (error) {
+    showToast("Data Supabase belum bisa dimuat. Periksa tabel dan policy database.");
+  }
 }
 
 function setupNavigation() {
@@ -264,9 +287,7 @@ function renderAll() {
 }
 
 function renderNameIdeas() {
-  $("#nameGrid").innerHTML = nameIdeas
-    .map(([name, slogan]) => `<article class="name-card"><strong>${name}</strong><span>${slogan}</span></article>`)
-    .join("");
+  return;
 }
 
 function renderFeatured() {
@@ -445,8 +466,8 @@ function handleAspirationSubmit(event) {
     id: createId(),
     name: cleanText(data.name) || "Anonim",
     className: cleanText(data.className),
-    category: data.category,
-    title: cleanText(data.title),
+    role: data.role,
+    category: data.role,
     body: cleanText(data.body),
     createdAt: Date.now(),
   });
@@ -462,8 +483,8 @@ function renderAspirations() {
     .map(
       (item) => `
       <article class="aspiration-item">
-        <span class="category-pill">${item.category}</span>
-        <h3>${item.title}</h3>
+        <span class="category-pill">${item.role || item.category || "Siswa"}</span>
+        <h3>Aspirasi dari ${item.role || item.category || "Siswa"}</h3>
         <p>${item.body}</p>
         <small>${item.name} · Kelas ${item.className} · ${relativeTime(item.createdAt)}</small>
       </article>`
@@ -529,7 +550,7 @@ function renderAdmin() {
     .map(
       (item) => `
       <article class="admin-item">
-        <strong>${item.title}</strong>
+        <strong>Aspirasi dari ${item.role || item.category || "Siswa"}</strong>
         <p>${item.body}</p>
         <small>${item.category} · ${item.name} · Kelas ${item.className}</small>
       </article>`
@@ -553,9 +574,9 @@ function renderStats() {
   }));
   renderBarChart("#ratingChart", ratingCounts);
 
-  const aspirationCounts = ["OSIS", "MPK", "Sekolah", "Fasilitas", "Pembelajaran", "Lainnya"].map((category) => ({
-    label: category,
-    value: store.aspirations.filter((item) => item.category === category).length,
+  const aspirationCounts = ["Siswa", "Guru", "Karyawan", "Orang Tua"].map((role) => ({
+    label: role,
+    value: store.aspirations.filter((item) => (item.role || item.category) === role).length,
   }));
   renderBarChart("#aspirationChart", aspirationCounts);
 
@@ -749,29 +770,102 @@ async function fetchProgramsFromSupabase() {
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return data;
+  return (data || []).map(mapProgramFromSupabase);
+}
+
+async function fetchReviewsFromSupabase() {
+  const { data, error } = await supabaseClient
+    .from("reviews")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data || []).map(mapReviewFromSupabase);
+}
+
+async function fetchAspirationsFromSupabase() {
+  const { data, error } = await supabaseClient
+    .from("aspirasi")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data || []).map(mapAspirationFromSupabase);
 }
 
 async function submitReviewToSupabase(review) {
-  const { error } = await supabaseClient.from("reviews").insert({
-    program_id: review.programId,
-    nama: review.name,
-    kelas: review.className,
-    rating: review.rating,
-    alasan: review.reason,
-  });
+  const { data, error } = await supabaseClient
+    .from("reviews")
+    .insert({
+      program_id: review.programId,
+      nama: review.name,
+      kelas: review.className,
+      rating: review.rating,
+      alasan: review.reason,
+    })
+    .select("*")
+    .single();
 
   if (error) throw error;
+  return mapReviewFromSupabase(data);
 }
 
 async function submitAspirationToSupabase(aspiration) {
-  const { error } = await supabaseClient.from("aspirasi").insert({
-    nama: aspiration.name,
-    kelas: aspiration.className,
-    kategori: aspiration.category,
-    judul: aspiration.title,
-    isi: aspiration.body,
-  });
+  const { data, error } = await supabaseClient
+    .from("aspirasi")
+    .insert({
+      nama: aspiration.name,
+      kelas: aspiration.className,
+      peran: aspiration.role,
+      isi: aspiration.body,
+    })
+    .select("*")
+    .single();
 
   if (error) throw error;
+  return mapAspirationFromSupabase(data);
+}
+
+function mapProgramFromSupabase(row) {
+  return {
+    id: row.id,
+    name: row.nama,
+    category: row.kategori?.nama || row.kategori || "Lainnya",
+    owner: row.penanggung_jawab || "OSIS",
+    status: row.status || "Akan Datang",
+    shortDescription: row.deskripsi_singkat || row.deskripsi_lengkap || "Belum ada deskripsi singkat.",
+    description: row.deskripsi_lengkap || row.deskripsi_singkat || "Belum ada deskripsi lengkap.",
+    goal: row.tujuan || "Belum ada tujuan program.",
+    target: row.target_peserta || "Seluruh warga sekolah",
+  };
+}
+
+function mapReviewFromSupabase(row) {
+  return {
+    id: row.id,
+    programId: row.program_id,
+    name: row.nama || "Anonim",
+    className: row.kelas,
+    rating: Number(row.rating),
+    reason: row.alasan,
+    createdAt: parseSupabaseDate(row.created_at),
+  };
+}
+
+function mapAspirationFromSupabase(row) {
+  const role = row.peran || row.kategori || "Siswa";
+  return {
+    id: row.id,
+    name: row.nama || "Anonim",
+    className: row.kelas,
+    role,
+    category: role,
+    body: row.isi,
+    createdAt: parseSupabaseDate(row.created_at),
+  };
+}
+
+function parseSupabaseDate(value) {
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? Date.now() : time;
 }
