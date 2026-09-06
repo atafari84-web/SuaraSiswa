@@ -46,7 +46,7 @@
           <div class="hero">
             <div class="hero-copy">
               <p class="eyebrow">Suara Kita untuk Sekolah yang Lebih Baik</p>
-              <h1>Berikan Penilaian dan Aspirasi Terbaikmu untuk Program Kerja OSIS</h1>
+              <h1>Berikan Penilaian dan Aspirasi Terbaikmu untuk Program Kerja OSIS/MPK</h1>
               <p>
                 Lihat kegiatan OSIS, beri rating dengan alasan yang jelas, dan sampaikan ide
                 untuk OSIS, MPK, maupun sekolah.
@@ -114,7 +114,7 @@
         <section class="page" id="programPage">
           <div class="page-header compact">
             <div>
-              <p class="eyebrow">Program Kerja OSIS</p>
+              <p class="eyebrow">Program Kerja OSIS/MPK</p>
               <h1>Jelajahi Program Kerja</h1>
             </div>
             <button class="primary-button small" id="openAddProgram">Tambah Proker</button>
@@ -158,32 +158,30 @@
                 <label>Nama <span>Opsional</span><input name="name" type="text" /></label>
                 <label>Kelas<input name="className" type="text" required placeholder="Contoh: XI-A" /></label>
               </div>
-              <label>
-                Peran
-                <select name="role" required>
-                  <option value="">Pilih peran</option>
-                  <option>Siswa</option>
-                  <option>Guru</option>
-                  <option>Karyawan</option>
-                  <option>Orang Tua</option>
-                </select>
-              </label>
-              <label>
-                Ditujukan Kepada
-                <select name="target" required>
-                  <option value="">Pilih yang ditujukan</option>
-                  <option>OSIS</option>
-                  <option>MPK</option>
-                  <option>Wali Kelas</option>
-                  <option>Guru</option>
-                  <option>Wakil Kesiswaan</option>
-                  <option>Kepala Sekolah</option>
-                  <option>Pengurus Ekstrakurikuler</option>
-                  <option>Tata Usaha</option>
-                  <option>Karyawan</option>
-                  <option>Tidak ada</option>
-                </select>
-              </label>
+              <div class="two-col">
+                <label>
+                  Peran
+                  <select name="role" required>
+                    <option value="">Pilih peran</option>
+                    <option>Siswa</option>
+                    <option>Guru</option>
+                    <option>Karyawan</option>
+                    <option>Orang Tua</option>
+                  </select>
+                </label>
+                <label>
+                  Ditujukan kepada
+                  <select name="recipient" required>
+                    <option value="">Pilih tujuan</option>
+                    <option>OSIS</option>
+                    <option>MPK</option>
+                    <option>Sekolah</option>
+                    <option>Fasilitas</option>
+                    <option>Pembelajaran</option>
+                    <option>Lainnya</option>
+                  </select>
+                </label>
+              </div>
               <label>
                 Isi Aspirasi
                 <textarea
@@ -216,7 +214,7 @@
             <div class="about-card">
               <h2>Tujuan Utama</h2>
               <ul>
-                <li>Melihat seluruh Program Kerja OSIS.</li>
+                <li>Melihat seluruh Program Kerja OSIS/MPK.</li>
                 <li>Memberikan penilaian disertai alasan.</li>
                 <li>Menyampaikan kritik, saran, dan aspirasi.</li>
                 <li>Membantu OSIS dan MPK menentukan prioritas perbaikan.</li>
