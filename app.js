@@ -13,8 +13,8 @@ const categories = [
 const ADMIN_EMAIL = "atafari84@gmail.com";
 const ADMIN_PASSWORD = "Viano134";
 
-const SUPABASE_URL = "https://ixfkflsplqvvilcvlhrx.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4ZmtmbHNwbHF2dmlsY3ZsaHJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MDI2MDksImV4cCI6MjA5OTE3ODYwOX0.PQuFzHb7-NPzTYtuYGE3KyFsQwgTJFHdn0QnUR3zOxw";
+const SUPABASE_URL = "https://qeffixxuczfietmttkjh.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlZmZpeHh1Y3pmaWV0bXR0a2poIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1MDMwNjEsImV4cCI6MjEwNjA3OTA2MX0.m0DPNFoRgt4UMvH2VD5CkixgATzg0zMfdIHMdPLmTgU";
 const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const USE_SUPABASE = Boolean(supabaseClient);
 
@@ -130,7 +130,6 @@ const defaultAspirations = [
     className: "XI-A",
     role: "Siswa",
     category: "Siswa",
-    target: "OSIS",
     body: "Area kantin perlu tempat duduk tambahan dan jalur antrean yang lebih rapi agar jam istirahat tidak terlalu padat.",
     createdAt: Date.now() - 3 * 86400000,
   },
@@ -146,7 +145,6 @@ store.aspirations = store.aspirations.map((item) => ({
   ...item,
   role: item.role || "Siswa",
   category: item.role || "Siswa",
-  target: item.target || "OSIS",
 }));
 
 let activeProgramId = store.programs[0]?.id;
@@ -470,7 +468,6 @@ function handleAspirationSubmit(event) {
     className: cleanText(data.className),
     role: data.role,
     category: data.role,
-    target: data.target,
     body: cleanText(data.body),
     createdAt: Date.now(),
   });
@@ -486,7 +483,7 @@ function renderAspirations() {
     .map(
       (item) => `
       <article class="aspiration-item">
-        <span class="category-pill">Untuk ${item.target || "OSIS"}</span>
+        <span class="category-pill">${item.role || item.category || "Siswa"}</span>
         <h3>Aspirasi dari ${item.role || item.category || "Siswa"}</h3>
         <p>${item.body}</p>
         <small>${item.name} · Kelas ${item.className} · ${relativeTime(item.createdAt)}</small>
@@ -553,7 +550,7 @@ function renderAdmin() {
     .map(
       (item) => `
       <article class="admin-item">
-        <strong>Aspirasi dari ${item.role || item.category || "Siswa"} untuk ${item.target || "OSIS"}</strong>
+        <strong>Aspirasi dari ${item.role || item.category || "Siswa"}</strong>
         <p>${item.body}</p>
         <small>${item.category} · ${item.name} · Kelas ${item.className}</small>
       </article>`
@@ -820,7 +817,6 @@ async function submitAspirationToSupabase(aspiration) {
       nama: aspiration.name,
       kelas: aspiration.className,
       peran: aspiration.role,
-      tujuan: aspiration.target,
       isi: aspiration.body,
     })
     .select("*")
@@ -864,7 +860,6 @@ function mapAspirationFromSupabase(row) {
     className: row.kelas,
     role,
     category: role,
-    target: row.tujuan || "OSIS",
     body: row.isi,
     createdAt: parseSupabaseDate(row.created_at),
   };
