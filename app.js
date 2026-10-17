@@ -13,7 +13,7 @@ const categories = [
 const ADMIN_EMAIL = "atafari84@gmail.com";
 // Password admin dikelola melalui Supabase Auth.
 
-const SUPABASE_URL = "https://qeffixxuczfietmttkjh.supabase.co";
+const SUPABASE_URL = "https://ixfkflsplqvvilcvlhrx.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlZmZpeHh1Y3pmaWV0bXR0a2poIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1MDMwNjEsImV4cCI6MjEwNjA3OTA2MX0.m0DPNFoRgt4UMvH2VD5CkixgATzg0zMfdIHMdPLmTgU";
 const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const USE_SUPABASE = Boolean(supabaseClient);
