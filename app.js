@@ -11,7 +11,7 @@ const categories = [
 ];
 
 const ADMIN_EMAIL = "atafari84@gmail.com";
-const ADMIN_PASSWORD = "Viano134";
+// Password admin dikelola melalui Supabase Auth.
 
 const SUPABASE_URL = "https://qeffixxuczfietmttkjh.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlZmZpeHh1Y3pmaWV0bXR0a2poIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1MDMwNjEsImV4cCI6MjEwNjA3OTA2MX0.m0DPNFoRgt4UMvH2VD5CkixgATzg0zMfdIHMdPLmTgU";
@@ -427,20 +427,22 @@ function reviewMarkup(review) {
   return `
     <article class="review-item">
       <div class="stars">${stars(review.rating)}</div>
-      <p>${review.reason}</p>
-      <small>${review.name || "Anonim"} · Kelas ${review.className} · ${relativeTime(review.createdAt)}</small>
+      <p>${escapeHTML(review.reason)}</p>
+      <small>${escapeHTML(review.name || "Anonim")} · Kelas ${escapeHTML(review.className)} · ${relativeTime(review.createdAt)}</small>
+      ${replyMarkup(review.adminReply)}
     </article>
   `;
 }
 
-function handleReviewSubmit(event) {
+async function handleReviewSubmit(event) {
   event.preventDefault();
   const data = Object.fromEntries(new FormData(event.currentTarget));
   if ((data.reason || "").trim().length < 15) {
     showToast("Alasan penilaian minimal 15 karakter.");
     return;
   }
-  store.reviews.unshift({
+
+  const review = {
     id: createId(),
     programId: activeProgramId,
     name: cleanText(data.name) || "Anonim",
@@ -448,29 +450,52 @@ function handleReviewSubmit(event) {
     rating: Number(data.rating),
     reason: cleanText(data.reason),
     createdAt: Date.now(),
-  });
+  };
+
+  try {
+    const savedReview = USE_SUPABASE ? await submitReviewToSupabase(review) : review;
+    store.reviews.unshift(savedReview);
+  } catch (error) {
+    showToast("Ulasan belum terkirim. Periksa koneksi Supabase dan policy database.");
+    return;
+  }
+
+  event.currentTarget.reset();
   save();
   renderAll();
   renderProgramDetail();
   showToast("Terima kasih. Penilaianmu sangat membantu kami meningkatkan kualitas Program Kerja.");
 }
 
-function handleAspirationSubmit(event) {
+async function handleAspirationSubmit(event) {
   event.preventDefault();
   const data = Object.fromEntries(new FormData(event.currentTarget));
   if ((data.body || "").trim().length < 30) {
     showToast("Isi aspirasi minimal 30 karakter.");
     return;
   }
-  store.aspirations.unshift({
+
+  const aspiration = {
     id: createId(),
     name: cleanText(data.name) || "Anonim",
     className: cleanText(data.className),
     role: data.role,
     category: data.role,
+    recipient: data.recipient,
     body: cleanText(data.body),
     createdAt: Date.now(),
-  });
+  };
+
+  try {
+    const savedAspiration = USE_SUPABASE
+      ? await submitAspirationToSupabase(aspiration)
+      : aspiration;
+    store.aspirations.unshift(savedAspiration);
+  } catch (error) {
+    showToast("Aspirasi belum terkirim. Periksa koneksi Supabase dan policy database.");
+    return;
+  }
+
   event.currentTarget.reset();
   save();
   renderAll();
@@ -483,10 +508,14 @@ function renderAspirations() {
     .map(
       (item) => `
       <article class="aspiration-item">
-        <span class="category-pill">${item.role || item.category || "Siswa"}</span>
-        <h3>Aspirasi dari ${item.role || item.category || "Siswa"}</h3>
-        <p>${item.body}</p>
-        <small>${item.name} · Kelas ${item.className} · ${relativeTime(item.createdAt)}</small>
+        <div class="moderation-head">
+          <span class="category-pill">${escapeHTML(item.role || item.category || "Siswa")}</span>
+          ${aspirationStatusMarkup(item.status)}
+        </div>
+        <h3>Aspirasi untuk ${escapeHTML(item.recipient || "Sekolah")}</h3>
+        <p>${escapeHTML(item.body)}</p>
+        <small>${escapeHTML(item.name)} · Kelas ${escapeHTML(item.className)} · ${relativeTime(item.createdAt)}</small>
+        ${replyMarkup(item.adminReply)}
       </article>`
     )
     .join("");
@@ -539,10 +568,14 @@ function renderAdmin() {
     const program = store.programs.find((item) => item.id === review.programId);
     return `
       <article class="admin-item">
-        <strong>${program?.name || "Program dihapus"} · ${stars(review.rating)}</strong>
-        <p>${review.reason}</p>
-        <small>${review.name} · Kelas ${review.className} · ${relativeTime(review.createdAt)}</small>
-        <button class="danger-button small" onclick="deleteReview('${review.id}')">Hapus Ulasan</button>
+        <strong>${escapeHTML(program?.name || "Program dihapus")} · ${stars(review.rating)}</strong>
+        <p>${escapeHTML(review.reason)}</p>
+        <small>${escapeHTML(review.name)} · Kelas ${escapeHTML(review.className)} · ${relativeTime(review.createdAt)}</small>
+        ${replyMarkup(review.adminReply)}
+        <div class="admin-actions">
+          <button class="ghost-button small" onclick="replyToReview('${review.id}')">${review.adminReply ? "Ubah Balasan" : "Balas"}</button>
+          <button class="danger-button small" onclick="deleteReview('${review.id}')">Hapus Ulasan</button>
+        </div>
       </article>`;
   }).join("");
 
@@ -550,9 +583,18 @@ function renderAdmin() {
     .map(
       (item) => `
       <article class="admin-item">
-        <strong>Aspirasi dari ${item.role || item.category || "Siswa"}</strong>
-        <p>${item.body}</p>
-        <small>${item.category} · ${item.name} · Kelas ${item.className}</small>
+        <div class="moderation-head">
+          <strong>Aspirasi untuk ${escapeHTML(item.recipient || "Sekolah")}</strong>
+          ${aspirationStatusMarkup(item.status)}
+        </div>
+        <p>${escapeHTML(item.body)}</p>
+        <small>${escapeHTML(item.role || item.category || "Siswa")} · ${escapeHTML(item.name)} · Kelas ${escapeHTML(item.className)}</small>
+        ${replyMarkup(item.adminReply)}
+        <div class="admin-actions">
+          <button class="ghost-button small" onclick="replyToAspiration('${item.id}')">${item.adminReply ? "Ubah Balasan" : "Balas"}</button>
+          <button class="primary-button small" onclick="setAspirationStatus('${item.id}', 'Diterima')">Terima</button>
+          <button class="danger-button small" onclick="setAspirationStatus('${item.id}', 'Tidak Diterima')">Tidak Terima</button>
+        </div>
       </article>`
     )
     .join("");
@@ -612,28 +654,44 @@ function setAdminTab(tab) {
   $(`#${tab}Panel`).classList.add("active");
 }
 
-function handleAdminLogin(event) {
+async function handleAdminLogin(event) {
   event.preventDefault();
   const data = Object.fromEntries(new FormData(event.currentTarget));
   const email = data.email.trim().toLowerCase();
   const password = data.password.trim();
 
-  if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+  if (!USE_SUPABASE) {
+    showToast("Supabase belum terhubung.");
+    return;
+  }
+
+  const { data: authData, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error || !authData.user) {
     showToast("Email atau password admin tidak sesuai.");
     return;
   }
 
-  localStorage.setItem(
-    "suarasiswa:adminSession",
-    JSON.stringify({ email, loginAt: Date.now() })
-  );
+  const { data: adminRow, error: adminError } = await supabaseClient
+    .from("admin")
+    .select("email")
+    .eq("email", authData.user.email)
+    .maybeSingle();
+
+  if (adminError || !adminRow) {
+    await supabaseClient.auth.signOut();
+    showToast("Akun ini bukan admin.");
+    return;
+  }
+
+  localStorage.setItem("suarasiswa:adminSession", JSON.stringify({ email: authData.user.email, loginAt: Date.now() }));
   event.currentTarget.reset();
   renderAdminGate();
   setAdminTab("stats");
   showToast("Login admin berhasil.");
 }
 
-function handleAdminLogout() {
+async function handleAdminLogout() {
+  if (USE_SUPABASE) await supabaseClient.auth.signOut();
   localStorage.removeItem("suarasiswa:adminSession");
   renderAdminGate();
   showToast("Admin berhasil keluar.");
@@ -652,7 +710,7 @@ function renderAdminGate() {
 
 function isAdminLoggedIn() {
   const session = getAdminSession();
-  return session?.email === ADMIN_EMAIL;
+  return Boolean(session?.email);
 }
 
 function getAdminSession() {
@@ -702,6 +760,87 @@ window.deleteReview = function deleteReview(id) {
   renderAll();
 };
 
+function replyMarkup(reply) {
+  if (!reply) return "";
+  return `<div class="admin-reply"><strong>Tanggapan Admin</strong><p>${escapeHTML(reply)}</p></div>`;
+}
+
+function aspirationStatusMarkup(status = "Menunggu") {
+  const normalized = status || "Menunggu";
+  const className = normalized === "Diterima" ? "accepted" : normalized === "Tidak Diterima" ? "rejected" : "pending";
+  return `<span class="moderation-status ${className}">${escapeHTML(normalized)}</span>`;
+}
+
+window.replyToReview = async function replyToReview(id) {
+  if (!isAdminLoggedIn()) return;
+  const review = store.reviews.find((item) => item.id === id);
+  if (!review) return;
+  const reply = prompt("Tulis balasan admin untuk ulasan ini:", review.adminReply || "");
+  if (reply === null) return;
+  await saveReviewModeration(id, { admin_reply: cleanText(reply) });
+};
+
+window.replyToAspiration = async function replyToAspiration(id) {
+  if (!isAdminLoggedIn()) return;
+  const aspiration = store.aspirations.find((item) => item.id === id);
+  if (!aspiration) return;
+  const reply = prompt("Tulis balasan admin untuk aspirasi ini:", aspiration.adminReply || "");
+  if (reply === null) return;
+  await saveAspirationModeration(id, { admin_reply: cleanText(reply) });
+};
+
+window.setAspirationStatus = async function setAspirationStatus(id, status) {
+  if (!isAdminLoggedIn()) return;
+  await saveAspirationModeration(id, { status });
+};
+
+async function saveReviewModeration(id, changes) {
+  try {
+    const { data, error } = await supabaseClient
+      .from("reviews")
+      .update({ ...changes, replied_at: new Date().toISOString() })
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    const index = store.reviews.findIndex((item) => item.id === id);
+    if (index >= 0) store.reviews[index] = mapReviewFromSupabase(data);
+    save();
+    renderAll();
+    showToast("Balasan ulasan berhasil disimpan.");
+  } catch {
+    showToast("Balasan belum tersimpan. Periksa policy admin di Supabase.");
+  }
+}
+
+async function saveAspirationModeration(id, changes) {
+  try {
+    const { data, error } = await supabaseClient
+      .from("aspirasi")
+      .update({ ...changes, replied_at: new Date().toISOString() })
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    const index = store.aspirations.findIndex((item) => item.id === id);
+    if (index >= 0) store.aspirations[index] = mapAspirationFromSupabase(data);
+    save();
+    renderAll();
+    showToast("Aspirasi berhasil diperbarui.");
+  } catch {
+    showToast("Aspirasi belum diperbarui. Periksa policy admin di Supabase.");
+  }
+}
+
+function escapeHTML(value = "") {
+  return String(value).replace(/[&<>'"]/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "'": "&#39;",
+    '"': "&quot;",
+  })[character]);
+}
 function reviewsFor(programId) {
   return store.reviews.filter((review) => review.programId === programId);
 }
@@ -817,6 +956,7 @@ async function submitAspirationToSupabase(aspiration) {
       nama: aspiration.name,
       kelas: aspiration.className,
       peran: aspiration.role,
+      recipient: aspiration.recipient,
       isi: aspiration.body,
     })
     .select("*")
@@ -848,6 +988,7 @@ function mapReviewFromSupabase(row) {
     className: row.kelas,
     rating: Number(row.rating),
     reason: row.alasan,
+    adminReply: row.admin_reply || "",
     createdAt: parseSupabaseDate(row.created_at),
   };
 }
@@ -860,6 +1001,9 @@ function mapAspirationFromSupabase(row) {
     className: row.kelas,
     role,
     category: role,
+    recipient: row.recipient || "Sekolah",
+    status: row.status || "Menunggu",
+    adminReply: row.admin_reply || "",
     body: row.isi,
     createdAt: parseSupabaseDate(row.created_at),
   };
@@ -869,3 +1013,8 @@ function parseSupabaseDate(value) {
   const time = new Date(value).getTime();
   return Number.isNaN(time) ? Date.now() : time;
 }
+
+
+
+
+

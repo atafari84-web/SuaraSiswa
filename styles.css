@@ -868,3 +868,35 @@ textarea:focus {
     grid-template-columns: 52px 1fr;
   }
 }
+
+.moderation-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.moderation-status {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.moderation-status.pending { color: #8a5d00; background: #fff3cd; }
+.moderation-status.accepted { color: #0b6b49; background: #dff7eb; }
+.moderation-status.rejected { color: #9b2340; background: #fde7ed; }
+
+.admin-reply {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 0.85rem;
+  border-left: 3px solid var(--teal);
+  padding: 0.7rem 0 0.7rem 0.85rem;
+  color: var(--muted);
+}
+
+.admin-reply strong { color: var(--teal); font-size: 0.82rem; }
+.admin-reply p { margin: 0; }
